@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+
+. config.inc.sh
+. internal_utils.inc.sh
+
+#PUT_NEW_OBJECT() 
+#DISTRIBUTE_FILES () 
+#SEND_FILE_TO_NODE() 
+#GET_FILE_LIST_FROM_NODE() 
+#GET_OBJECT_CONTENTS() 
+#DELETE_OBJECT_ACROSS_NODES() 
+#ERROR() 
+
+USAGE() {
+  cat <<EOF
+Usage: store help
+             init
+             put
+             list
+             get    <object ref>
+             delete <object ref>
+EOF
+}
+
+if [ -z "$1" ]; then
+  USAGE
+else
+  subcommand="$1"
+  shift
+  case "$subcommand" in
+    "help")
+      USAGE
+      ;;
+    "put")
+      if [ -z "$1" ]; then
+        PUT_NEW_OBJECT 
+      else
+        USAGE
+      fi
+      ;;
+    "get")
+      while [ -n "$1" ]; do
+        GET_OBJECT_CONTENTS "$1"
+        shift
+      done
+      ;;
+    "list")
+      if [ -z "$1" ]; then
+        GET_LIST_OF_ALL_OBJECTS
+      else
+        USAGE
+      fi
+      ;;
+    "delete")
+      while [ -n "$1" ]; do
+        DELETE_OBJECT_ACROSS_NODES "$1"
+        shift
+      done
+      ;;
+    "init")
+      if [ 0z "$1" ]; then
+        INIT
+      else
+        USAGE
+      fi
+      ;;
+    *)
+      ERROR "invalid subcommand"
+      ;;
+  esac
+fi
+
+
