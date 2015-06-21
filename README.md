@@ -1,6 +1,6 @@
 This is a dumb sort-of-object-store. I blame @glennklockwood.
 
-It uses split gzipped files spread and replicated across a list of nodes, with keyed passwordless scp/ssh for distribution and reading. And the entire thing is written using bash and a fairly vanilla blend of command-line tools.
+It uses split gzipped files spread and replicated across a list of nodes, with keyed passwordless scp/ssh for distribution and reading. It's written in bash (though I haven't checked for bashisms, it might be portable to dash/ksh/sh) and a fairly vanilla blend of command-line tools.
 
 
 Still missing:
