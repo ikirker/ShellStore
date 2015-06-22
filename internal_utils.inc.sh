@@ -1,16 +1,35 @@
 #!/usr/bin/env bash
 
+SSH_ARGS="-o \"PreferredAuthentications publickey\""
+SCP_ARGS="$SSH_ARGS"
+
 INIT() {
   mkdir -p "$RUN_IN_DIR" || ERROR "while attempting to create store dir"
   mkdir -p "$TMP_RCV_DIR" || ERROR "while attempting to create rcv dir"
   if id $RUN_AS_USER; then : ; else ERROR "intended user not found"; fi
   hostname >>$RUN_IN_DIR/nodelist.txt
+  CHECK_NODE_CONNECTIVITY
+}
+
+CHECK_NODE_CONNECTIVITY() {
+  for node in `cat $RUN_IN_DIR/nodelist.txt`; do
+    node_test_output=`ssh $SSH_ARGS echo "test_output"`
+    if [ -z "$node_test_output" ]; then
+      ERROR "while checking node connectivity"
+    else
+      unset node_test_output
+    fi
+  done
 }
 
 PUT_NEW_OBJECT() {
   OBJECT_PREFIX=`echo "$RANDOM $RANDOM $RANDOM $RANDOM $RANDOM $RANDOM $RANDOM" | sha1sum | cut -f 1 -d" "`
+  # Possible alternative:
+  # OBJECT_PREFIX=`dd if=/dev/random bs=64 count=1 | sha1sum | cut -f 1 -d " "`
 
-  gzip -c  - | split --bytes=1MB - "$TMP_RCV_DIR/$OBJECT_PREFIX.gz."
+  # Adjust suffix-length for very large objects
+  # 5: max size ~11TB
+  gzip -c  - | split --bytes=1MB --suffix-length=5 - "$TMP_RCV_DIR/$OBJECT_PREFIX.gz."
 
   if [ $? -eq 0 ]; then
     echo "Success: $OBJECT_PREFIX" >&2
@@ -41,16 +60,16 @@ DISTRIBUTE_FILES () {
 
 SEND_FILE_TO_NODE() {
   scp                                      \
-   -o "PreferredAuthentications publickey" \
+   $SCP_ARGS                               \
    "$2" "$RUNS_AS_USER@$1:$RUNS_IN_DIR/"   \
    || ERROR "while attempting to send file to node"
 }
 
 GET_FILE_LIST_FROM_NODE() {
   ssh                                       \
-    -o "PreferredAuthentications publickey" \
-    "$1" find "$RUNS_IN_DIR" -maxdepth 1 -name "*.gz.*"       \
-    || ERROR "while attempting to get file list from node"
+   $SSH_ARGS                                \
+   "$1" find "$RUNS_IN_DIR" -maxdepth 1 -name "*.gz.*" \
+   || ERROR "while attempting to get file list from node"
 }
 
 GET_LIST_OF_ALL_OBJECTS() {
@@ -74,9 +93,9 @@ GET_OBJECT_CONTENTS() {
   #  the filtering is done on the node
   for node in `cat "$RUNS_IN_DIR/nodelist.txt"`; do
     node_files=`ssh \
-                 -o "PreferredAuthentications publickey"        \
+                 $SSH_ARGS                                       \
                  "$node"                                         \
-                 find "$RUNS_IN_DIR" -maxdepth 1 -name "*.gz.*" \
+                 find "$RUNS_IN_DIR" -maxdepth 1 -name "*.gz.*"  \
                 | grep "$object_prefix" | sed -e "s/^/$node /"`
 
     all_node_files=`echo -ne "$node_files\n$all_node_files"`
@@ -92,7 +111,7 @@ GET_OBJECT_CONTENTS() {
     target_node=${entry%%:*}
     target_file=${entry##*:}
     ssh \
-     -o "PreferredAuthentications publickey"   \
+     $SSH_ARGS                                 \
      "$RUNS_AS_USER@$node"                     \
      cat "$target_file"
   done
@@ -104,7 +123,7 @@ DELETE_OBJECT_ACROSS_NODES() {
 
   for node in `cat "$RUNS_IN_DIR/nodelist.txt"`; do
     ssh \
-     -o "PreferredAuthentications publickey"   \
+     $SSH_ARGS                                 \
      "$RUNS_AS_USER@$node"                     \
      "rm $RUNS_IN_DIR/$object_prefix.gz.*" 
   done
