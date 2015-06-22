@@ -6,8 +6,10 @@ It uses split gzipped files spread and replicated across a list of nodes, with k
 Still missing:
  
  * more careful replication, where we actually have multiple replicas on single hosts (or else make sure we don't try to make more replicas than we have hosts: at the moment they just get overwritten on the same host)
+ * maybe more careful object ID generation
  * nodelist syncing
  * ability to run in different dirs on different nodes
  * any sort of checking that what you get out is what you put in
+ * bash CGI access
  * probably a bunch of other things, I don't know
 
