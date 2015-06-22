@@ -11,5 +11,7 @@ Still missing:
  * ability to run in different dirs on different nodes
  * any sort of checking that what you get out is what you put in
  * bash CGI access
+ * something to check the number of replicas available and re-replicate if necessary
+ * something to check replicas haven't diverged through corruption (+ quorum assertion)
  * probably a bunch of other things, I don't know
 
