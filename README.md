@@ -13,5 +13,7 @@ Still missing:
  * bash CGI access
  * something to check the number of replicas available and re-replicate if necessary
  * something to check replicas haven't diverged through corruption (+ quorum assertion)
+ * a remote version of the store command
+ * CI testing
  * probably a bunch of other things, I don't know
 
