@@ -58,7 +58,7 @@ else
       done
       ;;
     "init")
-      if [ 0z "$1" ]; then
+      if [ -z "$1" ]; then
         INIT
       else
         USAGE
