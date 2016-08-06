@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 
-SSH_ARGS="-o \"PreferredAuthentications publickey\""
+SSH_ARGS="-q -o PreferredAuthentications=publickey"
 SCP_ARGS="$SSH_ARGS"
 
 INIT() {
-  mkdir -p "$RUN_IN_DIR" || ERROR "while attempting to create store dir"
+  mkdir -p "$RUNS_IN_DIR" || ERROR "while attempting to create store dir"
   mkdir -p "$TMP_RCV_DIR" || ERROR "while attempting to create rcv dir"
   if id $RUN_AS_USER; then : ; else ERROR "intended user not found"; fi
-  hostname >>$RUN_IN_DIR/nodelist.txt
+  hostname >>$RUNS_IN_DIR/nodelist.txt
   CHECK_NODE_CONNECTIVITY
 }
 
 CHECK_NODE_CONNECTIVITY() {
-  for node in `cat $RUN_IN_DIR/nodelist.txt`; do
-    node_test_output=`ssh $SSH_ARGS echo "test_output"`
+  for node in `cat $RUNS_IN_DIR/nodelist.txt`; do
+    node_test_output=`ssh $SSH_ARGS $node echo "test_output"`
     if [ -z "$node_test_output" ]; then
       ERROR "while checking node connectivity"
     else
@@ -32,11 +32,11 @@ PUT_NEW_OBJECT() {
   gzip -c  - | split --bytes=1MB --suffix-length=5 - "$TMP_RCV_DIR/$OBJECT_PREFIX.gz."
 
   if [ $? -eq 0 ]; then
-    echo "Success: $OBJECT_PREFIX" >&2
     DISTRIBUTE_FILES $TMP_RCV_DIR/$OBJECT_PREFIX.gz.*
     
     if [ $? -eq 0 ]; then
       rm $TMP_RCV_DIR/$OBJECT_PREFIX.gz.*
+    echo "Success: $OBJECT_PREFIX" >&2
     else
       ERROR "while attempting to distribute files" 
     fi
