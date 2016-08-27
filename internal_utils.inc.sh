@@ -6,7 +6,7 @@ SCP_ARGS="$SSH_ARGS"
 INIT() {
   mkdir -p "$RUNS_IN_DIR" || ERROR "while attempting to create store dir"
   mkdir -p "$TMP_RCV_DIR" || ERROR "while attempting to create rcv dir"
-  if id $RUN_AS_USER; then : ; else ERROR "intended user not found"; fi
+  if id $RUNS_AS_USER >/dev/null; then : ; else ERROR "intended user not found"; fi
   hostname >>$RUNS_IN_DIR/nodelist.txt
   CHECK_NODE_CONNECTIVITY
 }
@@ -48,7 +48,18 @@ PUT_NEW_OBJECT() {
 DISTRIBUTE_FILES () {
   while [ "$1" != "" ]; do 
     for i in `seq 1 $NUMBER_OF_REPLICAS`; do
-      node=`sort -R "$RUNS_IN_DIR/nodelist.txt" | head -n 1`
+      case "$DISTRIBUTION_ALGORITHM" in
+        "random")
+          node=`sort -R "$RUNS_IN_DIR/nodelist.txt" | head -n 1`
+          ;;
+        "mod_rotate")
+          num_nodes=`wc -l "$RUNS_IN_DIR/nodelist.txt"`
+          char=$(( $(printf %d \'${1:$((i-1)):$i}) % num_nodes ))
+          node=`sed -e ${char}p`
+          ;;
+        *)
+          ERROR "no valid distribution algorithm specified"
+      esac
       SEND_FILE_TO_NODE "$node" "$1"
       if [ $? -ne 0 ]; then
         ERROR "while distributing files"
@@ -95,8 +106,9 @@ GET_OBJECT_CONTENTS() {
     node_files=`ssh \
                  $SSH_ARGS                                       \
                  "$node"                                         \
-                 find "$RUNS_IN_DIR" -maxdepth 1 -name "*.gz.*"  \
-                | grep "$object_prefix" | sed -e "s/^/$node /"`
+                 "find \"$RUNS_IN_DIR\" -maxdepth 1 -name \"*.gz.*\" \
+                    | grep \"$object_prefix\"                        \
+                    | sed -e \"s/^/$node /\""`
 
     all_node_files=`echo -ne "$node_files\n$all_node_files"`
   done
@@ -112,7 +124,7 @@ GET_OBJECT_CONTENTS() {
     target_file=${entry##*:}
     ssh \
      $SSH_ARGS                                 \
-     "$RUNS_AS_USER@$node"                     \
+     "$RUNS_AS_USER@$target_node"              \
      cat "$target_file"
   done
   ) | gzip -d -c 
