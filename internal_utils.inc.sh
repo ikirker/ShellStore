@@ -53,9 +53,11 @@ DISTRIBUTE_FILES () {
           node=`sort -R "$RUNS_IN_DIR/nodelist.txt" | head -n 1`
           ;;
         "mod_rotate")
-          num_nodes=`wc -l "$RUNS_IN_DIR/nodelist.txt"`
-          char=$(( $(printf %d \'${1:$((i-1)):$i}) % num_nodes ))
-          node=`sed -e ${char}p`
+          num_nodes=`wc -l "$RUNS_IN_DIR/nodelist.txt" | cut -f 1 -d ' '`
+          basename=`basename "$1"`
+          char="${basename:$((i-1)):$i}"
+          node_line_no=$(( 1 + $(printf %d \'$char) % $num_nodes ))
+          node=`sed -ne ${node_line_no}p $RUNS_IN_DIR/nodelist.txt`
           ;;
         *)
           ERROR "no valid distribution algorithm specified"
