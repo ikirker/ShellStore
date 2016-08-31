@@ -118,8 +118,10 @@ GET_OBJECT_CONTENTS() {
   node_object_sources=`echo "$all_node_files" \
                         | sort -R             \
                         | sort -k 2           \
-                        | uniq -f 2           \
+                        | uniq -f 1           \
                         | tr ' ' ':'`
+  # TODO: Add debug option for this sort of thing:
+  echo "Getting object, sources: $node_object_sources" >&2
   (
   for entry in $node_object_sources; do
     target_node=${entry%%:*}
