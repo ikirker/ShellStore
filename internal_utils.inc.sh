@@ -89,9 +89,9 @@ GET_LIST_OF_ALL_OBJECTS() {
   all_lists=""
   for node in `cat $RUNS_IN_DIR/nodelist.txt`; do
     one_list=`GET_FILE_LIST_FROM_NODE "$node"`
-    all_lists=`echo -e "$all_lists\n$one_list"`
+    all_lists=`echo -e "${all_lists}${all_lists:+\n}${one_list}"`
   done
-  all_lists=`sed -e 's/\.gz\..*//' -e "s_^.*/__" -e '/^$/d' <<<"$all_lists" | sort -u`
+  all_lists=`sed -e 's/\.gz\..*//' -e "s_^.*/__" <<<"$all_lists" | sort -u`
   echo "$all_lists"
 }
 
